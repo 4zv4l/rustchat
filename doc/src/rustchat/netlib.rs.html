@@ -347,6 +347,9 @@
 <span id="347">347</span>
 <span id="348">348</span>
 <span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std::io</span>::{<span class="self">self</span>, <span class="ident">Write</span>, <span class="ident">BufReader</span>, <span class="ident">BufRead</span>};
 <span class="kw">use</span> <span class="ident">std::net</span>::{<span class="ident">TcpListener</span>,<span class="ident">TcpStream</span>};
@@ -646,6 +649,7 @@
     <span class="kw">fn</span> <span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span>;
     <span class="kw">fn</span> <span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span>;
 }
+
 <span class="comment">// add Crypto&#39;s functions for String type</span>
 <span class="kw">impl</span> <span class="ident">Crypto</span> <span class="kw">for</span> <span class="ident">String</span> {
     <span class="doccomment">/// encrypt the string</span>
@@ -656,25 +660,27 @@
     <span class="doccomment">/// # Example :</span>
     <span class="doccomment">/// ```</span>
     <span class="doccomment">/// let s = &quot;Hello&quot;.to_string();</span>
-    <span class="doccomment">/// let s = encrypt(s);</span>
+    <span class="doccomment">/// let s = s.encrypt(&quot;key&quot;.to_string());</span>
     <span class="doccomment">/// println!(&quot;{}&quot;,s);</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">fn</span> <span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_key</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+        <span class="comment">// some code</span>
         <span class="kw">return</span> <span class="self">self</span>.<span class="ident">to_string</span>();
     }
     
     <span class="doccomment">/// decrypt the string</span>
     <span class="doccomment">/// # return value</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// return an decrypted String</span>
+    <span class="doccomment">/// return a decrypted String</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// # Example :</span>
     <span class="doccomment">/// ```</span>
     <span class="doccomment">/// let s = &quot;Hello&quot;.to_string();</span>
-    <span class="doccomment">/// let s = decrypt(s);</span>
+    <span class="doccomment">/// let s = s.decrypt(&quot;key&quot;.to_string());</span>
     <span class="doccomment">/// println!(&quot;{}&quot;,s);</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">fn</span> <span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_key</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+        <span class="comment">// some code</span>
         <span class="kw">return</span> <span class="self">self</span>.<span class="ident">to_string</span>();
     }
 }

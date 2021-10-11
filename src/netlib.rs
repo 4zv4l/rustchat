@@ -296,6 +296,7 @@ trait Crypto {
     fn encrypt(&self, key: String) -> String;
     fn decrypt(&self, key: String) -> String;
 }
+
 // add Crypto's functions for String type
 impl Crypto for String {
     /// encrypt the string
@@ -306,25 +307,27 @@ impl Crypto for String {
     /// # Example :
     /// ```
     /// let s = "Hello".to_string();
-    /// let s = encrypt(s);
+    /// let s = s.encrypt("key".to_string());
     /// println!("{}",s);
     /// ```
     fn encrypt(&self, _key: String) -> String {
+        // some code
         return self.to_string();
     }
     
     /// decrypt the string
     /// # return value
     ///
-    /// return an decrypted String
+    /// return a decrypted String
     ///
     /// # Example :
     /// ```
     /// let s = "Hello".to_string();
-    /// let s = decrypt(s);
+    /// let s = s.decrypt("key".to_string());
     /// println!("{}",s);
     /// ```
     fn decrypt(&self, _key: String) -> String {
+        // some code
         return self.to_string();
     }
 }
