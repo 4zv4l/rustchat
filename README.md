@@ -1,2 +1,2 @@
 # rustchat
-tcp chat in Go
+tcp chat in Rust
