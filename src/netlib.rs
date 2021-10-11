@@ -172,6 +172,7 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
     data.clear();
     match reader.read_line(data){
         Ok(bytes) => {
+            let data = decrypt(data.to_string());
             print!("\r{}", data);
             bytes
         }
@@ -201,7 +202,8 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
 /// write(&client, &data);
 /// ```
 pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
-   match client.write(data.as_bytes()){
+    let data = encrypt(data.to_string());
+    match client.write(data.as_bytes()){
         Ok(bytes) => bytes,
         Err(_) => 0
     }
@@ -283,6 +285,36 @@ pub fn read_thread(client_read: &TcpStream) -> thread::JoinHandle<i32> {
         };
     });
     return read;
+}
+
+/// encrypt the string
+/// # return value
+///
+/// return an encrypted String
+///
+/// # Example :
+/// ```
+/// let s = "Hello".to_string();
+/// let s = encrypt(s);
+/// println!("{}",s);
+/// ```
+pub fn encrypt(data: String) -> String {
+    return data;
+}
+
+/// decrypt the string
+/// # return value
+///
+/// return an decrypted String
+///
+/// # Example :
+/// ```
+/// let s = "Hello".to_string();
+/// let s = decrypt(s);
+/// println!("{}",s);
+/// ```
+pub fn decrypt(data: String) -> String {
+    return data;
 }
 
 /// ask the user for a string to send
