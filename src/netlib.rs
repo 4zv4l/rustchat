@@ -102,7 +102,7 @@ pub fn listen(conn_id: &String) -> TcpListener {
 /// let conn = listen(&conn_id);
 /// ```
 pub fn connect(conn_id: &String) -> TcpStream {
-  match TcpStream::connect(conn_id) {
+    match TcpStream::connect(conn_id) {
         Ok(sock) => {
             println!("[+] Connected to {}", conn_id);
             sock
@@ -172,7 +172,7 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
     data.clear();
     match reader.read_line(data){
         Ok(bytes) => {
-            let data = decrypt(data.to_string());
+            let data = data.decrypt("azerty1234".to_string());
             print!("\r{}", data);
             bytes
         }
@@ -202,7 +202,7 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
 /// write(&client, &data);
 /// ```
 pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
-    let data = encrypt(data.to_string());
+    let data = data.encrypt("azerty1234".to_string());
     match client.write(data.as_bytes()){
         Ok(bytes) => bytes,
         Err(_) => 0
@@ -276,7 +276,11 @@ pub fn read_thread(client_read: &TcpStream) -> thread::JoinHandle<i32> {
         let mut data = String::new();
         loop{
             // read data from the client
-            println!("{} bytes received !", read(&client_read, &mut data));
+            let bytes = read(&client_read, &mut data);
+            if bytes == 0 { // if 0 bytes received
+                continue;
+            }
+            println!("{} bytes received !", bytes);
             if data.trim() == "STOP" {
                 client_read.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
                 println!("[-] Server closed with success");
@@ -287,35 +291,44 @@ pub fn read_thread(client_read: &TcpStream) -> thread::JoinHandle<i32> {
     return read;
 }
 
-/// encrypt the string
-/// # return value
-///
-/// return an encrypted String
-///
-/// # Example :
-/// ```
-/// let s = "Hello".to_string();
-/// let s = encrypt(s);
-/// println!("{}",s);
-/// ```
-pub fn encrypt(data: String) -> String {
-    return data;
+// group of function for Crypto
+trait Crypto {
+    fn encrypt(&self, key: String) -> String;
+    fn decrypt(&self, key: String) -> String;
+}
+// add Crypto's functions for String type
+impl Crypto for String {
+    /// encrypt the string
+    /// # return value
+    ///
+    /// return an encrypted String
+    ///
+    /// # Example :
+    /// ```
+    /// let s = "Hello".to_string();
+    /// let s = encrypt(s);
+    /// println!("{}",s);
+    /// ```
+    fn encrypt(&self, _key: String) -> String {
+        return self.to_string();
+    }
+    
+    /// decrypt the string
+    /// # return value
+    ///
+    /// return an decrypted String
+    ///
+    /// # Example :
+    /// ```
+    /// let s = "Hello".to_string();
+    /// let s = decrypt(s);
+    /// println!("{}",s);
+    /// ```
+    fn decrypt(&self, _key: String) -> String {
+        return self.to_string();
+    }
 }
 
-/// decrypt the string
-/// # return value
-///
-/// return an decrypted String
-///
-/// # Example :
-/// ```
-/// let s = "Hello".to_string();
-/// let s = decrypt(s);
-/// println!("{}",s);
-/// ```
-pub fn decrypt(data: String) -> String {
-    return data;
-}
 
 /// ask the user for a string to send
 /// # return value
