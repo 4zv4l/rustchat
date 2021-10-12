@@ -1,14 +1,14 @@
+use crypto::Crypto;
 use std::io::{self, Write, BufReader, BufRead};
 use std::net::{TcpListener,TcpStream};
 use std::thread;
 
 /// show the usage
-/// # usage
-/// ```
-/// println!("Usage : {} [-S as Server/-C as Client] <ip> <port>");
-/// ```
-pub fn usage(arg: &String){
-    println!("Usage : {} [-S as Server/-C as Client] <ip> <port>", arg);
+pub fn usage(){
+    println!("Usage : rustchat [option] [parameters]
+  option :
+\t-S <ip> <port>   Start as server
+\t-C <ip> <port>   Start as Client");
 }
 
 /// check the argument to start as Server or Client
@@ -43,14 +43,14 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
                 },
                 // if arg[1] != Client or Server
                 _ => {
-                    usage(&args[0]);
+                    usage();
                     std::process::exit(0);
                 }
             }
         }
         // args < 4 > args
         _ => {
-            usage(&args[0]);
+            usage();
             std::process::exit(0);
         }
     }
@@ -150,7 +150,7 @@ pub fn accept(listener: TcpListener) ->TcpStream {
 /// # argument
 ///
 /// * `client` - reference to a TcpStream
-/// * `data`   - reference to a mutable String
+/// * `data`   - reference to a mutable String, will contain the data
 ///
 /// # return value
 ///
@@ -171,12 +171,8 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
    let mut reader = BufReader::new(client);
     data.clear();
     match reader.read_line(data){
-        Ok(bytes) => {
-            let data = data.decrypt("azerty1234".to_string());
-            print!("\r{}", data);
-            bytes
-        }
-        Err(_) => return 0
+        Ok(bytes) => bytes,
+        Err(_) => 0
     }
 }
 
@@ -184,7 +180,7 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
 /// # argument
 ///
 /// * `client` - reference to a TcpStream
-/// * `data`   - reference to a String
+/// * `data`   - reference to a String, will contain the data
 ///
 /// # return value
 /// 
@@ -202,10 +198,12 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
 /// write(&client, &data);
 /// ```
 pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
-    let data = data.encrypt("azerty1234".to_string());
     match client.write(data.as_bytes()){
         Ok(bytes) => bytes,
-        Err(_) => 0
+        Err(_) => {
+            println!("[-] message could not be sent");
+            0
+        }
     }
 }
 
@@ -230,17 +228,21 @@ pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
 /// let t_write = write_thread(&client);
 /// t_write.join().unwrap();
 /// ```
-pub fn write_thread(client_write: &TcpStream) -> thread::JoinHandle<i32> {
-   let client_write = client_write.try_clone().unwrap();
+pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandle<i32> {
+    let client_write = client_write.try_clone().unwrap();
+    let key = key.clone();
     let write = thread::spawn( move ||{
         loop{
             // ask for a string to send
             let data = ask_string();
+            let buff = data.trim();
+            // encrypt the string
+            let mut data = data.encrypt(key.to_string());
+            data.push('\n');
             // send data to the client
             println!("{} bytes sent !", write(&client_write, &data));
-            if data.trim() == "STOP" {
-                client_write.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
-                println!("[-] Server closed with success");
+            if buff == "STOP" {
+                println!("[-] Connection closed with success");
                 std::process::exit(0);
             }
         };
@@ -269,69 +271,31 @@ pub fn write_thread(client_write: &TcpStream) -> thread::JoinHandle<i32> {
 /// let t_read = read_thread(&client);
 /// t_read.join().unwrap();
 /// ```
-pub fn read_thread(client_read: &TcpStream) -> thread::JoinHandle<i32> {
-   let client_read = client_read.try_clone().unwrap();
+pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<i32> {
+    let client_read = client_read.try_clone().unwrap();
+    let key = key.clone();
     let read = thread::spawn( move || {
         // create the variable to store de write/send data
         let mut data = String::new();
         loop{
             // read data from the client
             let bytes = read(&client_read, &mut data);
+            // decrypt the data received
+            let data = data.decrypt(key.to_string());
+            println!("{}", data.trim());
             if bytes == 0 { // if 0 bytes received
                 continue;
             }
             println!("{} bytes received !", bytes);
             if data.trim() == "STOP" {
                 client_read.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
-                println!("[-] Server closed with success");
+                println!("[-] Connection closed with success");
                 std::process::exit(0);
             }
         };
     });
     return read;
 }
-
-// group of function for Crypto
-trait Crypto {
-    fn encrypt(&self, key: String) -> String;
-    fn decrypt(&self, key: String) -> String;
-}
-
-// add Crypto's functions for String type
-impl Crypto for String {
-    /// encrypt the string
-    /// # return value
-    ///
-    /// return an encrypted String
-    ///
-    /// # Example :
-    /// ```
-    /// let s = "Hello".to_string();
-    /// let s = s.encrypt("key".to_string());
-    /// println!("{}",s);
-    /// ```
-    fn encrypt(&self, _key: String) -> String {
-        // some code
-        return self.to_string();
-    }
-    
-    /// decrypt the string
-    /// # return value
-    ///
-    /// return a decrypted String
-    ///
-    /// # Example :
-    /// ```
-    /// let s = "Hello".to_string();
-    /// let s = s.decrypt("key".to_string());
-    /// println!("{}",s);
-    /// ```
-    fn decrypt(&self, _key: String) -> String {
-        // some code
-        return self.to_string();
-    }
-}
-
 
 /// ask the user for a string to send
 /// # return value
@@ -345,8 +309,27 @@ impl Crypto for String {
 /// println!("Hi {} !", name);
 /// ```
 pub fn ask_string() -> String{
-
     let mut data = String::new();
     io::stdin().read_line(&mut data).expect("read stdin err");
     return data;
+}
+
+/// share key with the connection
+///
+/// # Example :
+/// ```
+/// let key = crypto::gen_key()
+/// share_key();
+/// ```
+pub fn share_key(client: &mut TcpStream, key: &mut String) {
+    // add newline to the key to allow the client to read it
+    key.push('\n');
+    // send the key
+    write(client, key);
+    println!("[+] key sent with success");
+    // receive the key
+    read(client, key);
+    // remove the second newline added with the transfert
+    key.pop();
+    println!("[+] key received with success");
 }
