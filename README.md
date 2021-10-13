@@ -1,2 +1,2 @@
 # rustchat
-tcp chat in Rust
+encrypted tcp Client/Server in Rust
