@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 crypto = { path = "../crypto" }
+colored = "2"

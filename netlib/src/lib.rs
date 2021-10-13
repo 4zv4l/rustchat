@@ -3,14 +3,25 @@ use std::io::{self, Write, BufReader, BufRead};
 use std::net::{TcpListener,TcpStream};
 use std::thread;
 use std::fs::OpenOptions;
+use colored::*;
 
 /// show the usage
 pub fn usage(){
-    println!("Usage : rustchat [option] [parameters]
-  option :
-\t-S <ip> <port>                 Start as server
-\t-C <ip> <port>                 Start as Client
-\t-K <privFile> <pubFile>        Generate private and public key");
+    println!("Usage : rustchat [{option}] [{par}]
+  {option} :
+\t-{serv} {ip} {port}                 Start as server
+\t-{cli} {ip} {port}                 Start as Client
+\t-{key} {priF} {pubF}        Generate private and public key"
+    , option = "option".yellow()
+    , par = "parameters".cyan()
+    , ip = "<ip>".cyan()
+    , port = "<port>".cyan()
+    , priF = "<privFile>".cyan()
+    , pubF = "<pubFile>".cyan()
+    , serv = "S".yellow()
+    , cli = "C".yellow()
+    , key = "K".yellow()
+    );
 }
 
 /// check the argument to start as Server or Client
@@ -82,11 +93,11 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
 pub fn listen(conn_id: &String) -> TcpListener {
   match TcpListener::bind(conn_id){
         Ok(sock) => {
-            println!("[+] Listening on : {}", sock.local_addr().unwrap());
+            println!("{} Listening on : {}","[+]".cyan(), sock.local_addr().unwrap());
             sock
         }
         Err(_) => {
-            println!("[-] Cannot listen to {}...", conn_id);
+            println!("{} Cannot listen to {}...","[-]".red(), conn_id);
             std::process::exit(0);
         }
     }
@@ -112,11 +123,11 @@ pub fn listen(conn_id: &String) -> TcpListener {
 pub fn connect(conn_id: &String) -> TcpStream {
     match TcpStream::connect(conn_id) {
         Ok(sock) => {
-            println!("[+] Connected to {}", conn_id);
+            println!("{} Connected to {}","[+]".cyan(), conn_id);
             sock
         }
         Err(_) => {
-            println!("[-] Cannot connect to {}...", conn_id);
+            println!("{} Cannot connect to {}...","[-]".red(), conn_id);
             std::process::exit(0);
         }
     }
@@ -144,11 +155,11 @@ pub fn connect(conn_id: &String) -> TcpStream {
 pub fn accept(listener: TcpListener) ->TcpStream {
     match listener.accept(){
         Ok((sock,addr)) => {
-            println!("[+] New client on {}", addr);
+            println!("{} New client on {}","[+]".cyan(), addr);
             sock
         },
         Err(e) => {
-            println!("[-] Err : {}",e);
+            println!("{} Err : {}","[-]".red(), e);
             std::process::exit(0);
         }
     }
@@ -209,7 +220,7 @@ pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
     match client.write(data.as_bytes()){
         Ok(bytes) => bytes,
         Err(_) => {
-            println!("[-] message could not be sent");
+            println!("{} message could not be sent","[-]".red());
             0
         }
     }
@@ -249,9 +260,9 @@ pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandl
             // add newline
             data.push('\n');
             // send data to the client
-            println!("{} bytes sent !", write(&client_write, &data));
+            println!("{} bytes sent !", write(&client_write, &data).to_string().magenta());
             if buff == "STOP" {
-                println!("[+] Connection closed with success");
+                println!("{} Connection closed with success", "[+]".cyan(),);
                 std::process::exit(0);
             }
         };
@@ -296,16 +307,16 @@ pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<
             data.pop();
             // check if the string is sent by the program
             if !data.check_string() {
-                println!("[-] Warning someone is wathing us...");
+                println!("{} Warning someone is wathing us...","[-]".red(),);
                 continue
             }
             // decrypt the data received
             let data = data.decrypt(key.to_string());
             println!("{}", data);
-            println!("{} bytes received !", bytes);
+            println!("{} bytes received !", bytes.to_string().magenta());
             if data.trim() == "STOP" {
                 //client_read.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
-                println!("[+] Connection closed with success");
+                println!("{} Connection closed with success","[+]".cyan(),);
                 std::process::exit(0);
             }
         };
@@ -345,22 +356,22 @@ fn write_to_file(key: String, file_name : String) {
             .create(true)
             .open(&file_name){
                 Ok(f) => {
-                    println!("[+] File opened with success !");
+                    println!("{} File opened with success !","[+]".cyan(),);
                     f
                 },
                 Err(_) => {
-                    println!("[-] Couldn't open the file...");
+                    println!("{} Couldn't open the file...","[-]".red(),);
                     std::process::exit(0)
                 }
             };
     // write to the file
     match f.write_all(key.as_bytes()){
         Ok(()) => {
-            println!("[+] Key written to the file {} with success !", &file_name);
+            println!("{} Key written to the file {} with success !","[+]".cyan(), &file_name);
             ()
         }
         Err(_) => {
-            println!("[-] Error when writing to the file...");
+            println!("{} Error when writing to the file...","[-]".red(),);
             std::process::exit(0);
         }
     }
@@ -378,10 +389,10 @@ pub fn share_key(client: &mut TcpStream, key: &mut String) {
     key.push('\n');
     // send the key
     write(client, key);
-    println!("[+] key sent with success");
+    println!("{} key sent with success","[+]".cyan(),);
     // receive the key
     read(client, key);
     // remove the second newline added with the transfert
     key.pop();
-    println!("[+] key received with success");
+    println!("{} key received with success","[+]".cyan(),);
 }
