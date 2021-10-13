@@ -1,14 +1,16 @@
-use crypto::Crypto;
+use crypto::{self,Crypto};
 use std::io::{self, Write, BufReader, BufRead};
 use std::net::{TcpListener,TcpStream};
 use std::thread;
+use std::fs::OpenOptions;
 
 /// show the usage
 pub fn usage(){
     println!("Usage : rustchat [option] [parameters]
   option :
-\t-S <ip> <port>   Start as server
-\t-C <ip> <port>   Start as Client");
+\t-S <ip> <port>                 Start as server
+\t-C <ip> <port>                 Start as Client
+\t-K <privFile> <pubFile>        Generate private and public key");
 }
 
 /// check the argument to start as Server or Client
@@ -30,7 +32,7 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
    match args.len() {
         4 => {
             // format the ip:port
-            let conn_id = format!("{}:{}", args[2], args[3]);
+            let conn_id = format!("{}:{}", &args[2], &args[3]);
             match args[1].parse::<String>().unwrap().as_str() {
                 "-S" => {
                     let listener = listen(&conn_id);
@@ -40,6 +42,12 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
                 "-C" => {
                     let client = connect(&conn_id);
                     client
+                },
+                "-K" => {
+                    let (priv_key, pub_key) = crypto::gen_key();
+                    write_to_file(priv_key, args[2].to_string());
+                    write_to_file(pub_key, args[3].to_string());
+                    std::process::exit(0);
                 },
                 // if arg[1] != Client or Server
                 _ => {
@@ -78,7 +86,7 @@ pub fn listen(conn_id: &String) -> TcpListener {
             sock
         }
         Err(_) => {
-            println!("Cannot listen to {}...", conn_id);
+            println!("[-] Cannot listen to {}...", conn_id);
             std::process::exit(0);
         }
     }
@@ -108,7 +116,7 @@ pub fn connect(conn_id: &String) -> TcpStream {
             sock
         }
         Err(_) => {
-            println!("Cannot connect to {}...", conn_id);
+            println!("[-] Cannot connect to {}...", conn_id);
             std::process::exit(0);
         }
     }
@@ -136,11 +144,11 @@ pub fn connect(conn_id: &String) -> TcpStream {
 pub fn accept(listener: TcpListener) ->TcpStream {
     match listener.accept(){
         Ok((sock,addr)) => {
-            println!("New client on {}", addr);
+            println!("[+] New client on {}", addr);
             sock
         },
         Err(e) => {
-            println!("Err : {}",e);
+            println!("[-] Err : {}",e);
             std::process::exit(0);
         }
     }
@@ -238,11 +246,12 @@ pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandl
             let buff = data.trim();
             // encrypt the string
             let mut data = data.encrypt(key.to_string());
+            // add newline
             data.push('\n');
             // send data to the client
             println!("{} bytes sent !", write(&client_write, &data));
             if buff == "STOP" {
-                println!("[-] Connection closed with success");
+                println!("[+] Connection closed with success");
                 std::process::exit(0);
             }
         };
@@ -280,16 +289,23 @@ pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<
         loop{
             // read data from the client
             let bytes = read(&client_read, &mut data);
-            // decrypt the data received
-            let data = data.decrypt(key.to_string());
-            println!("{}", data.trim());
             if bytes == 0 { // if 0 bytes received
                 continue;
             }
+            // remove the newline
+            data.pop();
+            // check if the string is sent by the program
+            if !data.check_string() {
+                println!("[-] Warning someone is wathing us...");
+                continue
+            }
+            // decrypt the data received
+            let data = data.decrypt(key.to_string());
+            println!("{}", data);
             println!("{} bytes received !", bytes);
             if data.trim() == "STOP" {
-                client_read.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
-                println!("[-] Connection closed with success");
+                //client_read.shutdown(std::net::Shutdown::Both).expect("Failed to close the connection...");
+                println!("[+] Connection closed with success");
                 std::process::exit(0);
             }
         };
@@ -312,6 +328,42 @@ pub fn ask_string() -> String{
     let mut data = String::new();
     io::stdin().read_line(&mut data).expect("read stdin err");
     return data;
+}
+
+/// write the key to the file given in argument
+///
+/// # Example :
+/// ```
+/// let (privK,pubK) = gen_key();
+/// write_to_file(privK, "privateKey.txt".to_string());
+/// ```
+fn write_to_file(key: String, file_name : String) {
+    // open the file
+    let mut f = match OpenOptions::new()
+            .read(false)
+            .write(true)
+            .create(true)
+            .open(&file_name){
+                Ok(f) => {
+                    println!("[+] File opened with success !");
+                    f
+                },
+                Err(_) => {
+                    println!("[-] Couldn't open the file...");
+                    std::process::exit(0)
+                }
+            };
+    // write to the file
+    match f.write_all(key.as_bytes()){
+        Ok(()) => {
+            println!("[+] Key written to the file {} with success !", &file_name);
+            ()
+        }
+        Err(_) => {
+            println!("[-] Error when writing to the file...");
+            std::process::exit(0);
+        }
+    }
 }
 
 /// share key with the connection
