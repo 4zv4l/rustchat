@@ -28,7 +28,7 @@ impl Crypto for String {
         // add the final magic number
         buff.push('3');
         buff.push('3');
-        return buff.to_string();
+        buff.to_string()
     }
 
     /// decrypt the string
@@ -51,7 +51,7 @@ impl Crypto for String {
             buff.push((c as u8 - 1) as char);
         }
         buff = buff[0..buff.len() - 3].to_string();
-        return buff;
+        buff
     }
 
     /// check if the string is well sent by the program or not
@@ -61,10 +61,10 @@ impl Crypto for String {
     fn check_string(&self) -> bool {
         // check if the string is sent by another person or not
         let last_two: String = self.chars().rev().take(2).collect(); // get two last chars
-        if last_two != "33".to_string() {
+        if last_two != *"33" {
             return false;
         }
-        return true;
+        true
     }
 }
 
@@ -82,5 +82,5 @@ impl Crypto for String {
 pub fn gen_key() -> (String, String) {
     let priv_key = "Hello".to_string();
     let pub_key = "Toi".to_string();
-    return (priv_key, pub_key);
+    (priv_key, pub_key)
 }

@@ -1,5 +1,3 @@
-use crypto;
-use netlib;
 use std::env;
 use std::net::TcpStream;
 

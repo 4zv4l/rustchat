@@ -48,12 +48,10 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
             match args[1].parse::<String>().unwrap().as_str() {
                 "-S" => {
                     let listener = listen(&conn_id);
-                    let client = accept(listener);
-                    client
+                    accept(listener)
                 }
                 "-C" => {
-                    let client = connect(&conn_id);
-                    client
+                    connect(&conn_id)
                 }
                 "-K" => {
                     let (priv_key, pub_key) = crypto::gen_key();
@@ -91,7 +89,7 @@ pub fn check_args(args: std::vec::Vec<std::string::String>) -> TcpStream {
 /// // start the tcp listener
 /// let listener = listen(&conn_id);
 /// ```
-pub fn listen(conn_id: &String) -> TcpListener {
+pub fn listen(conn_id: &str) -> TcpListener {
     match TcpListener::bind(conn_id) {
         Ok(sock) => {
             println!(
@@ -125,7 +123,7 @@ pub fn listen(conn_id: &String) -> TcpListener {
 /// // start the tcp connection
 /// let conn = listen(&conn_id);
 /// ```
-pub fn connect(conn_id: &String) -> TcpStream {
+pub fn connect(conn_id: &str) -> TcpStream {
     match TcpStream::connect(conn_id) {
         Ok(sock) => {
             println!("{} Connected to {}", "[+]".cyan(), conn_id);
@@ -194,10 +192,7 @@ pub fn accept(listener: TcpListener) -> TcpStream {
 pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
     let mut reader = BufReader::new(client);
     data.clear();
-    match reader.read_line(data) {
-        Ok(bytes) => bytes,
-        Err(_) => 0,
-    }
+    reader.read_line(data).unwrap_or(0)
 }
 
 /// write data to the client
@@ -221,7 +216,7 @@ pub fn read(client: &std::net::TcpStream, data: &mut String) -> usize {
 /// let data = "Hello you\n".to_string();
 /// write(&client, &data);
 /// ```
-pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
+pub fn write(mut client: &std::net::TcpStream, data: &str) -> usize {
     match client.write(data.as_bytes()) {
         Ok(bytes) => bytes,
         Err(_) => {
@@ -252,10 +247,10 @@ pub fn write(mut client: &std::net::TcpStream, data: &String) -> usize {
 /// let t_write = write_thread(&client);
 /// t_write.join().unwrap();
 /// ```
-pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandle<i32> {
+pub fn write_thread(client_write: &TcpStream, key: &str) -> thread::JoinHandle<i32> {
     let client_write = client_write.try_clone().unwrap();
-    let key = key.clone();
-    let write = thread::spawn(move || {
+    let key = key.to_string();
+    thread::spawn(move || {
         loop {
             // ask for a string to send
             let data = ask_string();
@@ -274,8 +269,7 @@ pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandl
                 std::process::exit(0);
             }
         }
-    });
-    return write;
+    })
 }
 
 /// start a thread to read data from the connection
@@ -299,10 +293,10 @@ pub fn write_thread(client_write: &TcpStream, key: &String) -> thread::JoinHandl
 /// let t_read = read_thread(&client);
 /// t_read.join().unwrap();
 /// ```
-pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<i32> {
+pub fn read_thread(client_read: &TcpStream, key: &str) -> thread::JoinHandle<i32> {
     let client_read = client_read.try_clone().unwrap();
-    let key = key.clone();
-    let read = thread::spawn(move || {
+    let key = key.to_string();
+    thread::spawn(move || {
         // create the variable to store de write/send data
         let mut data = String::new();
         loop {
@@ -329,8 +323,7 @@ pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<
                 std::process::exit(0);
             }
         }
-    });
-    return read;
+    })
 }
 
 /// ask the user for a string to send
@@ -347,7 +340,7 @@ pub fn read_thread(client_read: &TcpStream, key: &String) -> thread::JoinHandle<
 pub fn ask_string() -> String {
     let mut data = String::new();
     io::stdin().read_line(&mut data).expect("read stdin err");
-    return data;
+    data
 }
 
 /// write the key to the file given in argument
@@ -382,7 +375,6 @@ fn write_to_file(key: String, file_name: String) {
                 "[+]".cyan(),
                 &file_name
             );
-            ()
         }
         Err(_) => {
             println!("{} Error when writing to the file...", "[-]".red(),);
