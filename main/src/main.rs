@@ -1,5 +1,5 @@
-use netlib;
 use crypto;
+use netlib;
 use std::env;
 use std::net::TcpStream;
 
@@ -18,7 +18,7 @@ fn main() {
 
     // thread to send data
     let write = netlib::write_thread(&client, &pub_key);
-    
+
     // thread to write data
     let read = netlib::read_thread(&client, &priv_key);
 

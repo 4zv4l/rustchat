@@ -2,7 +2,7 @@
 pub trait Crypto {
     fn check_string(&self) -> bool;
     fn encrypt(&self, key: String) -> String;
-    fn decrypt(&self, key: String) ->String;
+    fn decrypt(&self, key: String) -> String;
 }
 
 // add Crypto's functions for String type
@@ -30,7 +30,7 @@ impl Crypto for String {
         buff.push('3');
         return buff.to_string();
     }
-    
+
     /// decrypt the string
     /// # return value
     ///
@@ -50,7 +50,7 @@ impl Crypto for String {
             // Insert a char at the end of string
             buff.push((c as u8 - 1) as char);
         }
-        buff = buff[0..buff.len()-3].to_string();
+        buff = buff[0..buff.len() - 3].to_string();
         return buff;
     }
 
@@ -61,13 +61,12 @@ impl Crypto for String {
     fn check_string(&self) -> bool {
         // check if the string is sent by another person or not
         let last_two: String = self.chars().rev().take(2).collect(); // get two last chars
-        if last_two !=  "33".to_string() {
-            return false
+        if last_two != "33".to_string() {
+            return false;
         }
-        return true
+        return true;
     }
 }
-
 
 /// generate a private and public Key
 /// # return value
