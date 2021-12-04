@@ -8,7 +8,7 @@ use std::thread;
 /// show the usage
 pub fn usage() {
     println!(
-        "Usage : rustchat [{option}] [{par}]
+"Usage : rustchat [{option}] [{par}]
   {option} :
 \t-{serv} {ip} {port}                 Start as server
 \t-{cli} {ip} {port}                 Start as Client
